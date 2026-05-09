@@ -1,0 +1,26 @@
+ID,genre,album_count,sales,artist_Location,group_name
+MU_0001,Pop,1,500000,USA,The Popstars
+MU_0002?,Jazz,2,501000,UK,Jazz Masters
+MU_0003,Rock,3,502000,Germany,Rock Rebels
+MU_0004,Blues,4,503000,France,Blues Legends
+MU_0005,EDM,5,504000,Brazil,EDM Warriors
+MU_0006,Country,6,505000,India,Country Roads
+MU_0007,Rap,7,506000,China,Rap Kings
+MU_0008,Latin,8,507000,Japan,Latin Lovers
+MU_0009,Folk,9,508000,Australia,Folk Tales
+MU_00?10,Indie,10,509000,Canada,Indie Icons
+MU_00?11,Pop,11,510000,USA,The Popstars
+MU_0012,Jazz,12,511000,UK,Jazz Masters
+MU_0013,Rock,13,512000,Germany,Rock Rebels
+MU_001?4,Blues,14,513000,France,Blues Legends
+?MU_0015,EDM,15,514000,Brazil,EDM Warriors
+MU_0016,Country,16,515000,India,Country Roads
+?MU_0017,Rap,17,516000,China,Rap Kings
+MU_0018?,Latin,18,517000,Japan,Latin Lovers
+MU_0019,Folk,19,518000,Australia,Folk Tales
+MU?_0020,Indie,20,519000,Canada,Indie Icons
+MU_002?1,Pop,1,520000,USA,The Popstars
+MU_002?2,Jazz,2,521000,UK,Jazz Masters
+M?U_0023,Rock,3,522000,Germany,Rock Rebels
+MU_0024?,Blues,4,523000,France,Blues Legends
+MU_0025,EDM,5,524000,Brazil,EDM Warriors

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FINAL EXAM Grader · Powered by Claude</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>FINAL EXAM Grader</h1>
+    <p class="subtitle">Excel + SQL screenshots · graded by Claude · runs in your browser</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>1. Claude API key</h2>
+      <p class="muted">
+        Stored only in your browser's localStorage on this device. The key is sent
+        directly from your browser to <code>api.anthropic.com</code>; this app has no
+        backend. <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get a key</a>.
+      </p>
+      <label>
+        API key
+        <input type="password" id="apiKey" autocomplete="off" placeholder="sk-ant-..." />
+      </label>
+      <div class="row">
+        <label>
+          Model
+          <select id="model">
+            <option value="claude-opus-4-7">Claude Opus 4.7 — best quality</option>
+            <option value="claude-sonnet-4-6">Claude Sonnet 4.6 — fastest, cheapest</option>
+          </select>
+        </label>
+        <button id="testKey" type="button" class="ghost">Test key</button>
+      </div>
+      <p class="muted small" id="keyStatus"></p>
+    </section>
+
+    <section class="card">
+      <h2>2. Strictness</h2>
+      <div class="strictness">
+        <label><input type="radio" name="strictness" value="lenient"> <strong>Lenient</strong> — reward effort</label>
+        <label><input type="radio" name="strictness" value="normal" checked> <strong>Normal</strong> — standard university grading</label>
+        <label><input type="radio" name="strictness" value="strict"> <strong>Strict</strong> — only exact technique scores</label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>3. Upload student work</h2>
+      <p class="muted">
+        Drop a single <code>.xlsx</code>, a <code>.zip</code> containing many <code>.xlsx</code>
+        files, or per-student folders inside a zip. SQL screenshots
+        (<code>.png</code> / <code>.jpg</code>) inside the same zip — or in a folder named
+        after the student — are picked up automatically and sent to Claude vision for
+        Q16–Q20.
+      </p>
+      <div id="dropzone" class="dropzone">
+        <input type="file" id="fileInput" multiple accept=".xlsx,.zip,.png,.jpg,.jpeg" hidden />
+        <p>Drop files here or <button type="button" id="browseBtn" class="link">browse…</button></p>
+        <ul id="fileList"></ul>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>4. Grade</h2>
+      <button id="gradeBtn" class="primary" disabled>Start grading</button>
+      <button id="cancelBtn" class="ghost" disabled>Cancel</button>
+      <div id="progress" class="progress"></div>
+      <div id="log" class="log"></div>
+    </section>
+
+    <section class="card" id="resultsCard" hidden>
+      <h2>5. Download</h2>
+      <p class="muted">A zip with the master grading sheet plus a folder per student (containing the original file + a feedback markdown).</p>
+      <button id="downloadBtn" class="primary">Download grading-results.zip</button>
+      <table id="resultsTable" class="results"></table>
+    </section>
+
+    <details class="footer">
+      <summary>How grading works</summary>
+      <p>
+        For Excel questions the app unzips the <code>.xlsx</code>, parses the inner XML
+        to extract every cell, formula, number-format, data-validation rule, conditional
+        formatting rule, chart, pivot table, slicer, defined name, and Power Query
+        connection. For each rubric question it sends Claude only the relevant slice of
+        that data plus the rubric text and your strictness preset, then asks for a JSON
+        verdict.
+      </p>
+      <p>
+        For SQL screenshots the app sends the images to Claude with vision, plus the
+        source CSV tables (so Claude can verify each query's expected result), and asks
+        for one JSON verdict per question.
+      </p>
+      <p>
+        All grading happens client-side. Your students' files never touch any server
+        other than Anthropic's. Costs are billed to the API key you provide.
+      </p>
+    </details>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

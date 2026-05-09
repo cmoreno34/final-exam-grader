@@ -1,0 +1,26 @@
+id,project_name,duration,status
+MU_0001,Pop Collection,730,Completed
+MU_0002?,Jazz Collection,745,Active
+MU_0003,Rock Collection,760,On Hold
+MU_0004,Blues Collection,775,Completed
+MU_0005,EDM Collection,790,Active
+MU_0006,Country Collection,805,On Hold
+MU_0007,Rap Collection,820,Completed
+MU_0008,Latin Collection,835,Active
+MU_0009,Folk Collection,850,On Hold
+MU_00?10,Indie Collection,865,Completed
+MU_00?11,Pop Collection,880,Active
+MU_0012,Jazz Collection,895,On Hold
+MU_0013,Rock Collection,910,Completed
+MU_001?4,Blues Collection,925,Active
+?MU_0015,EDM Collection,940,On Hold
+MU_0016,Country Collection,955,Completed
+?MU_0017,Rap Collection,970,Active
+MU_0018?,Latin Collection,985,On Hold
+MU_0019,Folk Collection,1000,Completed
+MU?_0020,Indie Collection,1015,Active
+MU_002?1,Pop Collection,1030,On Hold
+MU_002?2,Jazz Collection,1045,Completed
+M?U_0023,Rock Collection,1060,Active
+MU_0024?,Blues Collection,1075,On Hold
+MU_0025,EDM Collection,1090,Completed
