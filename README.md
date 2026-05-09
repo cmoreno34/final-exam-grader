@@ -12,7 +12,12 @@ the FINAL EXAM (Excel + SQL) the same way Claude does in chat.
 - **Output** — a single `grading-results.zip` containing:
   - `00_grades.xlsx` — master sheet with totals and per-question scores
   - `00_grades.csv` — same as CSV
-  - `<student>/` — original file + `feedback.md` per student
+  - `<student>/<name>_GRADED.xlsx` — the student's original workbook **with
+    a new `GRADING (auto)` sheet injected inside**. The sheet shows max points,
+    awarded points, verdict, evidence and feedback per question. The total is
+    a `=SUM(...)` formula, so if you edit any *Awarded* cell manually the
+    total updates automatically.
+  - `<student>/feedback.md` — same content as a markdown report.
 
 Everything runs in your browser. Files never go anywhere except the Anthropic
 API endpoint.
