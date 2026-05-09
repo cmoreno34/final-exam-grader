@@ -137,14 +137,15 @@ async function grade() {
     const startedAt = new Date().toISOString();
     const studentResults = [];
     setProgress(0);
-    let perStudentSteps = QUESTIONS.length; // Excel + 1 SQL pass
-    let totalSteps = submissions.length * (perStudentSteps + 1);
+    // 2 steps per student: 1 bulk Excel call + 1 SQL call
+    let totalSteps = submissions.length * 2;
     let stepsDone = 0;
 
     for (const sub of submissions) {
       showLog(`▶ ${sub.studentName}: parsing workbook…`);
       const workbook = await extractWorkbook(sub.xlsxBytes);
 
+      showLog(`   · grading Excel (Q1–Q15, searching all sheets)…`);
       const excelResults = await gradeWorkbook({
         workbook,
         apiKey,
@@ -153,14 +154,13 @@ async function grade() {
         studentName: sub.studentName,
         signal: state.abort.signal,
         onProgress: (e) => {
-          stepsDone++;
-          setProgress((stepsDone / totalSteps) * 100);
-          showLog(
-            `   · ${e.questionId} (${e.index + 1}/${e.total})`,
-            "muted"
-          );
+          if (e.kind === "question") {
+            showLog(`     fallback ${e.questionId} (${e.index + 1}/${e.total})`, "muted");
+          }
         },
       });
+      stepsDone++;
+      setProgress((stepsDone / totalSteps) * 100);
 
       showLog(`   · grading SQL screenshots (${sub.screenshots.length} image(s))…`);
       const sqlResults = await gradeSqlScreenshots({
