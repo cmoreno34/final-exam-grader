@@ -4,7 +4,7 @@ import { extractWorkbook } from "./lib/extractor.js";
 import { gradeWorkbook, gradeSqlScreenshots } from "./lib/grader.js";
 import { buildOutputZip } from "./lib/output.js";
 import { QUESTIONS, EXAM_TOTAL } from "./lib/rubric.js";
-import { callClaude } from "./lib/api.js";
+import { callClaude, MODELS, DEFAULT_MODEL } from "./lib/api.js";
 
 const els = {
   apiKey: document.getElementById("apiKey"),
@@ -22,6 +22,7 @@ const els = {
   resultsCard: document.getElementById("resultsCard"),
   resultsTable: document.getElementById("resultsTable"),
   downloadBtn: document.getElementById("downloadBtn"),
+  costEstimate: document.getElementById("costEstimate"),
 };
 
 const state = {
@@ -32,15 +33,56 @@ const state = {
   referenceTablesText: null,
 };
 
-// --- API key persistence -----------------------------------------------------
+// --- API key + model persistence ---------------------------------------------
 els.apiKey.value = localStorage.getItem("anthropic_key") ?? "";
-els.model.value = localStorage.getItem("anthropic_model") ?? "claude-opus-4-7";
+populateModelDropdown();
+const savedModel = localStorage.getItem("anthropic_model");
+els.model.value = (savedModel && MODELS[savedModel]) ? savedModel : DEFAULT_MODEL;
 els.apiKey.addEventListener("change", () =>
   localStorage.setItem("anthropic_key", els.apiKey.value.trim())
 );
 els.model.addEventListener("change", () =>
   localStorage.setItem("anthropic_model", els.model.value)
 );
+
+function populateModelDropdown() {
+  els.model.innerHTML = "";
+  for (const [id, info] of Object.entries(MODELS)) {
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = info.label;
+    els.model.appendChild(opt);
+  }
+}
+
+function updateCostEstimate() {
+  // Per-student rough estimate. Input ~ 18K tokens (workbook dump ~10K +
+  // rubric+system ~5K + screenshots ~3K). Output ~ 3K tokens. Prompt caching
+  // brings input down ~40% across many students after the first.
+  const inputTokensFirst = 18_000;
+  const inputTokensCached = 12_000;
+  const outputTokens = 3_000;
+  const n = state.files.length;
+  if (!n) {
+    els.costEstimate.textContent = "";
+    return;
+  }
+  const m = MODELS[els.model.value];
+  if (!m) return;
+  const cost = (
+    (inputTokensFirst * m.inputPer1M) / 1e6 +
+    Math.max(n - 1, 0) * (inputTokensCached * m.inputPer1M) / 1e6 +
+    n * (outputTokens * m.outputPer1M) / 1e6
+  );
+  // Single-student range (lower for compact files, higher for big ones)
+  const lo = (cost / n) * 0.6;
+  const hi = (cost / n) * 1.6;
+  els.costEstimate.innerHTML =
+    `Estimated cost: <strong>$${cost.toFixed(2)}</strong> total ` +
+    `(≈ $${lo.toFixed(2)}–$${hi.toFixed(2)} per student × ${n} ` +
+    `${n === 1 ? "submission" : "submissions"}). Rough — actual depends on workbook size.`;
+}
+els.model.addEventListener("change", updateCostEstimate);
 
 els.testKey.addEventListener("click", async () => {
   const key = els.apiKey.value.trim();
@@ -88,6 +130,7 @@ function addFiles(fileList) {
   for (const f of fileList) state.files.push(f);
   renderFileList();
   els.gradeBtn.disabled = state.files.length === 0;
+  updateCostEstimate();
 }
 function renderFileList() {
   els.fileList.innerHTML = state.files
@@ -101,6 +144,7 @@ function renderFileList() {
       state.files.splice(Number(b.dataset.rm), 1);
       renderFileList();
       els.gradeBtn.disabled = state.files.length === 0;
+      updateCostEstimate();
     })
   );
 }

@@ -27,13 +27,16 @@
       <div class="row">
         <label>
           Model
-          <select id="model">
-            <option value="claude-opus-4-7">Claude Opus 4.7 — best quality</option>
-            <option value="claude-sonnet-4-6">Claude Sonnet 4.6 — fastest, cheapest</option>
-          </select>
+          <select id="model"></select>
         </label>
         <button id="testKey" type="button" class="ghost">Test key</button>
       </div>
+      <p class="muted small">
+        Tip: <strong>Haiku 4.5</strong> is ~15× cheaper than Opus and is enough
+        for most exams. <strong>Sonnet 4.6</strong> is the safe default. Use
+        <strong>Opus 4.7</strong> only for tricky cases where you want the
+        best judgment.
+      </p>
       <p class="muted small" id="keyStatus"></p>
     </section>
 
@@ -64,6 +67,7 @@
 
     <section class="card">
       <h2>4. Grade</h2>
+      <p class="muted small" id="costEstimate"></p>
       <button id="gradeBtn" class="primary" disabled>Start grading</button>
       <button id="cancelBtn" class="ghost" disabled>Cancel</button>
       <div id="progress" class="progress"></div>
