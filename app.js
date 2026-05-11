@@ -36,8 +36,21 @@ const state = {
 // --- API key + model persistence ---------------------------------------------
 els.apiKey.value = localStorage.getItem("anthropic_key") ?? "";
 populateModelDropdown();
+// We changed the default to Haiku in this build. If the user previously saved
+// a different model (e.g. Opus from an earlier session) we'd otherwise
+// silently keep billing at the old higher rate. The `model_default_v` key
+// lets us bump versions and force the new default to apply once.
+const MODEL_DEFAULT_VERSION = "2";
+const savedDefaultV = localStorage.getItem("anthropic_model_default_v");
 const savedModel = localStorage.getItem("anthropic_model");
-els.model.value = (savedModel && MODELS[savedModel]) ? savedModel : DEFAULT_MODEL;
+if (savedDefaultV !== MODEL_DEFAULT_VERSION) {
+  // First load on this build → reset to current default and remember it.
+  localStorage.setItem("anthropic_model", DEFAULT_MODEL);
+  localStorage.setItem("anthropic_model_default_v", MODEL_DEFAULT_VERSION);
+  els.model.value = DEFAULT_MODEL;
+} else {
+  els.model.value = (savedModel && MODELS[savedModel]) ? savedModel : DEFAULT_MODEL;
+}
 els.apiKey.addEventListener("change", () =>
   localStorage.setItem("anthropic_key", els.apiKey.value.trim())
 );
@@ -56,12 +69,15 @@ function populateModelDropdown() {
 }
 
 function updateCostEstimate() {
-  // Per-student rough estimate. Input ~ 18K tokens (workbook dump ~10K +
-  // rubric+system ~5K + screenshots ~3K). Output ~ 3K tokens. Prompt caching
-  // brings input down ~40% across many students after the first.
-  const inputTokensFirst = 18_000;
-  const inputTokensCached = 12_000;
-  const outputTokens = 3_000;
+  // Rough per-student token model. We have two API calls per student (the
+  // bulk Excel grader and the SQL screenshots call). The cacheable parts —
+  // system prompt + rubric + reference tables — total about 5K tokens and
+  // are billed at 10% of the input rate from the second student onward.
+  // The per-student variable parts are the workbook dump (~8K tokens) and
+  // the SQL images (~2K token-equivalents on average).
+  const CACHE_TOKENS = 5_000;        // cacheable: system + rubric + ref tables
+  const PER_STUDENT_TOKENS = 10_000; // not cacheable: dump + images
+  const OUTPUT_TOKENS = 1_500;       // typical JSON verdict size
   const n = state.files.length;
   if (!n) {
     els.costEstimate.textContent = "";
@@ -69,18 +85,22 @@ function updateCostEstimate() {
   }
   const m = MODELS[els.model.value];
   if (!m) return;
-  const cost = (
-    (inputTokensFirst * m.inputPer1M) / 1e6 +
-    Math.max(n - 1, 0) * (inputTokensCached * m.inputPer1M) / 1e6 +
-    n * (outputTokens * m.outputPer1M) / 1e6
-  );
-  // Single-student range (lower for compact files, higher for big ones)
-  const lo = (cost / n) * 0.6;
-  const hi = (cost / n) * 1.6;
+  // 1st student: cache WRITE = 1.25× input cost. Subsequent: 0.10× input cost.
+  // Multiply by 2 because each student triggers 2 calls (Excel + SQL).
+  const callsPerStudent = 2;
+  const cacheWriteCost = (CACHE_TOKENS * m.inputPer1M * 1.25) / 1e6 * callsPerStudent;
+  const cacheHitCost = (CACHE_TOKENS * m.inputPer1M * 0.10) / 1e6 * callsPerStudent;
+  const perStudentInput = (PER_STUDENT_TOKENS * m.inputPer1M) / 1e6 * callsPerStudent;
+  const perStudentOutput = (OUTPUT_TOKENS * m.outputPer1M) / 1e6 * callsPerStudent;
+  const cost =
+    cacheWriteCost +
+    Math.max(n - 1, 0) * cacheHitCost +
+    n * (perStudentInput + perStudentOutput);
+  const perStudentAvg = cost / n;
   els.costEstimate.innerHTML =
     `Estimated cost: <strong>$${cost.toFixed(2)}</strong> total ` +
-    `(≈ $${lo.toFixed(2)}–$${hi.toFixed(2)} per student × ${n} ` +
-    `${n === 1 ? "submission" : "submissions"}). Rough — actual depends on workbook size.`;
+    `(≈ $${perStudentAvg.toFixed(3)} per student × ${n} ` +
+    `${n === 1 ? "submission" : "submissions"}). Cache savings apply after the first student.`;
 }
 els.model.addEventListener("change", updateCostEstimate);
 
