@@ -206,9 +206,18 @@ async function grade() {
       stepsDone++;
       setProgress((stepsDone / totalSteps) * 100);
 
-      showLog(`   · grading SQL screenshots (${sub.screenshots.length} image(s))…`);
+      // Students frequently paste SQL screenshots straight into the workbook
+      // instead of attaching them separately. Use both sources.
+      const embeddedImgs = (workbook.embeddedImages || []).map((img) => ({
+        base64: img.base64,
+        mediaType: img.mediaType,
+      }));
+      const allScreenshots = [...sub.screenshots, ...embeddedImgs];
+      showLog(
+        `   · grading SQL screenshots (${sub.screenshots.length} attached + ${embeddedImgs.length} embedded)…`
+      );
       const sqlResults = await gradeSqlScreenshots({
-        screenshots: sub.screenshots,
+        screenshots: allScreenshots,
         apiKey,
         model,
         strictness,
@@ -328,13 +337,20 @@ async function splitIntoStudentSubmissions(files) {
       sub.xlsxBytes = new Uint8Array(await file.arrayBuffer());
       sub.originalName = file.name;
     } else if (/\.(png|jpe?g)$/i.test(lower)) {
-      // Loose screenshot — attach to a "screenshots" pseudo-student or, better,
-      // try matching by name prefix to an existing student.
-      const stem = stripExt(file.name);
-      const matched =
-        [...submissions.keys()].find((n) =>
-          stem.toLowerCase().includes(n.toLowerCase())
-        ) ?? "loose-screenshots";
+      // Loose screenshot — try to attach to an existing submission by best
+      // common-prefix match. Either direction counts: the screenshot stem may
+      // be a prefix of the long xlsx name, or vice versa.
+      const stem = stripExt(file.name).toLowerCase();
+      let best = null;
+      let bestLen = 0;
+      for (const n of submissions.keys()) {
+        const len = longestCommonPrefix(stem, n.toLowerCase());
+        if (len > bestLen && len >= 4) {
+          bestLen = len;
+          best = n;
+        }
+      }
+      const matched = best ?? "loose-screenshots";
       const sub = ensure(matched);
       const data = arrayBufferToBase64(await file.arrayBuffer());
       sub.screenshots.push({
@@ -425,4 +441,10 @@ function arrayBufferToBase64(buf) {
   let bin = "";
   for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
   return btoa(bin);
+}
+function longestCommonPrefix(a, b) {
+  const max = Math.min(a.length, b.length);
+  let i = 0;
+  while (i < max && a.charCodeAt(i) === b.charCodeAt(i)) i++;
+  return i;
 }
